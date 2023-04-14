@@ -11,6 +11,7 @@
 // #![warn(clippy::unwrap_used)]
 // #![warn(clippy::missing_docs_in_private_items)]
 #![doc = include_str!("../README.md")]
+#![feature(let_chains)]
 
 // In ESP32-S2, the Bluetooth controller is not present.
 // Completely disable this crate.
