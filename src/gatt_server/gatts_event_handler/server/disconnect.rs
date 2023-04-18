@@ -11,7 +11,7 @@ impl GattServer {
             param.remote_bda.to_vec()
         );
 
-        self.active_connections.remove(&param.into());
+        self.active_connections.remove(&param.conn_id);
 
         unsafe {
             esp_idf_sys::esp_ble_gap_start_advertising(&mut self.advertisement_parameters);

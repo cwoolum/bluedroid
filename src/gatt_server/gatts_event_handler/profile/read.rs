@@ -5,6 +5,7 @@ use std::sync::Mutex;
 
 use crate::gatt_server::Profile;
 use crate::utilities::AttributeControl;
+use esp_idf_sys::ESP_GATT_DEF_BLE_MTU_SIZE;
 use esp_idf_sys::*;
 use lazy_static::lazy_static;
 use log::debug;
@@ -15,7 +16,7 @@ lazy_static! {
 
 const RESPONSE_LENGTH: usize = 600;
 // TODO: Pull current MTU size from MTU update events
-const MAX_CHUNK_SIZE: u16 = 22;
+const MAX_CHUNK_SIZE: u16 = ESP_GATT_DEF_BLE_MTU_SIZE;
 
 impl Profile {
     pub(crate) fn on_read(
@@ -42,7 +43,7 @@ impl Profile {
                         {
                             let mut locked_cache = MESSAGE_CACHE.lock().unwrap();
 
-                            let value = fun_name(&mut locked_cache, param, callback);
+                            let value = get_message(&mut locked_cache, param, callback);
 
                             // Extend the response to the maximum length.
                             let mut response = [0u8; RESPONSE_LENGTH];
@@ -144,7 +145,7 @@ impl Profile {
     }
 }
 
-fn fun_name(
+fn get_message(
     locked_cache: &mut std::sync::MutexGuard<HashMap<u16, Vec<u8>>>,
     param: esp_ble_gatts_cb_param_t_gatts_read_evt_param,
     callback: &std::sync::Arc<
@@ -158,10 +159,8 @@ fn fun_name(
         _ => callback(param),
     };
 
-    if cached_message.is_none() {
-        if value.len() > MAX_CHUNK_SIZE.into() {
-            locked_cache.insert(param.handle, value.clone());
-        }
+    if cached_message.is_none() && value.len() > MAX_CHUNK_SIZE.into() {
+        locked_cache.insert(param.handle, value.clone());
     }
 
     value

@@ -37,7 +37,7 @@ impl GattServer {
             characteristic.read().unwrap()
         );
 
-        for connection in self.active_connections.clone() {
+        for (conn_id, connection) in self.active_connections.clone() {
             // Get the current status of the CCCD via a fake read operation.
             let simulated_read_param = esp_ble_gatts_cb_param_t_gatts_read_evt_param {
                 bda: connection.remote_bda,

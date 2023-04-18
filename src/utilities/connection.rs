@@ -1,6 +1,6 @@
 use esp_idf_sys::{
     esp_ble_gatts_cb_param_t_gatts_connect_evt_param,
-    esp_ble_gatts_cb_param_t_gatts_disconnect_evt_param,
+    esp_ble_gatts_cb_param_t_gatts_disconnect_evt_param, ESP_GATT_DEF_BLE_MTU_SIZE,
 };
 
 #[derive(Debug, Copy, Clone)]
@@ -9,6 +9,7 @@ pub(crate) struct Connection {
     #[cfg(esp_idf_version_major = "4")]
     pub(crate) is_slave: bool,
     pub(crate) remote_bda: [u8; 6],
+    pub(crate) mtu: u32,
 }
 
 impl From<esp_ble_gatts_cb_param_t_gatts_connect_evt_param> for Connection {
@@ -18,6 +19,7 @@ impl From<esp_ble_gatts_cb_param_t_gatts_connect_evt_param> for Connection {
             #[cfg(esp_idf_version_major = "4")]
             is_slave: param.link_role == 1,
             remote_bda: param.remote_bda,
+            mtu: ESP_GATT_DEF_BLE_MTU_SIZE,
         }
     }
 }
@@ -29,6 +31,7 @@ impl From<esp_ble_gatts_cb_param_t_gatts_disconnect_evt_param> for Connection {
             #[cfg(esp_idf_version_major = "4")]
             is_slave: param.link_role == 1,
             remote_bda: param.remote_bda,
+            mtu: ESP_GATT_DEF_BLE_MTU_SIZE,
         }
     }
 }

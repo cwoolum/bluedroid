@@ -3,7 +3,7 @@
 #![allow(clippy::cast_possible_truncation)]
 
 use std::{
-    collections::HashSet,
+    collections::{HashMap},
     sync::{Arc, Mutex, RwLock},
 };
 
@@ -80,7 +80,7 @@ lazy_static! {
         },
         advertisement_configured: false,
         device_name: "ESP32".to_string(),
-        active_connections: HashSet::new(),
+        active_connections: HashMap::new(),
     });
 }
 
@@ -95,7 +95,7 @@ pub struct GattServer {
     scan_response_data: esp_ble_adv_data_t,
     device_name: String,
     advertisement_configured: bool,
-    active_connections: HashSet<Connection>,
+    active_connections: HashMap<u16, Connection>,
 }
 
 unsafe impl Send for GattServer {}
