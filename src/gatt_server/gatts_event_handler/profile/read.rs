@@ -40,33 +40,17 @@ impl Profile {
                         if let AttributeControl::ResponseByApp(callback) =
                             &characteristic.read().unwrap().control
                         {
-                            let value;
-
                             let mut locked_cache = MESSAGE_CACHE.lock().unwrap();
-                            let cached_message = locked_cache.get(&param.handle);
 
-                            match cached_message {
-                                Some(message) if param.offset > 0 => {
-                                    value = message.to_vec();
-                                }
-                                _ => {
-                                    value = callback(param);
-                                }
-                            }
-
-                            if let None = cached_message {
-                                if value.len() > MAX_CHUNK_SIZE.into() {
-                                    locked_cache.insert(param.handle, value.to_vec());
-                                }
-                            }
+                            let value = fun_name(&mut locked_cache, param, callback);
 
                             // Extend the response to the maximum length.
                             let mut response = [0u8; RESPONSE_LENGTH];
                             let possible_max =
                                 cmp::min(value.len(), (param.offset + MAX_CHUNK_SIZE).into());
-                            let sub_string = &value[param.offset.into()..possible_max.into()];
+                            let sub_string = &value[param.offset.into()..possible_max];
 
-                            // Remove from the cache once we don't need chunking anymore.
+                            // Remove from the cache once we don't need fragmenting anymore.
                             if sub_string.len() < MAX_CHUNK_SIZE.into() {
                                 println!(
                                     "Removing from cache {:?} {:?}",
@@ -158,4 +142,27 @@ impl Profile {
                 });
         }
     }
+}
+
+fn fun_name(
+    locked_cache: &mut std::sync::MutexGuard<HashMap<u16, Vec<u8>>>,
+    param: esp_ble_gatts_cb_param_t_gatts_read_evt_param,
+    callback: &std::sync::Arc<
+        dyn Fn(esp_ble_gatts_cb_param_t_gatts_read_evt_param) -> Vec<u8> + Send + Sync,
+    >,
+) -> Vec<u8> {
+    let cached_message = locked_cache.get(&param.handle);
+
+    let value = match cached_message {
+        Some(message) if param.offset > 0 => message.clone(),
+        _ => callback(param),
+    };
+
+    if cached_message.is_none() {
+        if value.len() > MAX_CHUNK_SIZE.into() {
+            locked_cache.insert(param.handle, value.clone());
+        }
+    }
+
+    value
 }
